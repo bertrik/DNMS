@@ -144,6 +144,38 @@ float last_leq_g_A;
 float last_leq_A_min;
 float last_leq_A_max;
 
+static uint8_t dnms_common_generate_crc(uint8_t *data, uint16_t count) {
+  uint16_t current_byte;
+  uint8_t crc = CRC8_INIT;
+  uint8_t crc_bit;
+
+  /* calculates 8-Bit checksum with given polynomial */
+  for (current_byte = 0; current_byte < count; ++current_byte) {
+    crc ^= (data[current_byte]);
+    for (crc_bit = 8; crc_bit > 0; --crc_bit) {
+      if (crc & 0x80)
+        crc = (crc << 1) ^ CRC8_POLYNOMIAL;
+      else
+        crc = (crc << 1);
+    }
+  }
+  return crc;
+}
+
+static void f2b(float val, uint8_t* bytes_array) {
+  // Create union of shared memory space
+  union {
+    float float_variable;      //      leq_HP_min = 0;
+    //      leq_HP_max = 0;
+    uint8_t temp_array[4];
+  } u;
+  // Overite bytes of union with float variable
+  u.float_variable = val;
+  // Assign bytes to input array
+  memcpy(bytes_array, u.temp_array, 4);
+}
+
+
 void setup() {
   Serial.begin(115200);
   delay(500);
@@ -361,33 +393,4 @@ void loop() {
   }
 
 
-  void f2b(float val, uint8_t* bytes_array) {
-    // Create union of shared memory space
-    union {
-      float float_variable;      //      leq_HP_min = 0;
-      //      leq_HP_max = 0;
-      uint8_t temp_array[4];
-    } u;
-    // Overite bytes of union with float variable
-    u.float_variable = val;
-    // Assign bytes to input array
-    memcpy(bytes_array, u.temp_array, 4);
-  }
 
-  uint8_t dnms_common_generate_crc(uint8_t *data, uint16_t count) {
-    uint16_t current_byte;
-    uint8_t crc = CRC8_INIT;
-    uint8_t crc_bit;
-
-    /* calculates 8-Bit checksum with given polynomial */
-    for (current_byte = 0; current_byte < count; ++current_byte) {
-      crc ^= (data[current_byte]);
-      for (crc_bit = 8; crc_bit > 0; --crc_bit) {
-        if (crc & 0x80)
-          crc = (crc << 1) ^ CRC8_POLYNOMIAL;
-        else
-          crc = (crc << 1);
-      }
-    }
-    return crc;
-  }
